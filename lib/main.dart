@@ -1,68 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:sembast/sembast.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'src/features/common/constants/strings.dart';
+import 'src/features/common/data/local/local_storage.dart';
+import 'src/features/common/data/notifiers/current_app_theme/current_app_theme_state_notifier.dart';
+import 'src/features/common/database/database_config.dart';
+import 'src/features/splash/screens/splash_screen.dart';
+import 'theme/theme_config.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  LocalStorage();
+  await DatabaseConfig.init(StoreRef<dynamic, dynamic>.main());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentAppTheme = ref.watch(currentAppThemeStateNotifierProvider);
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+      debugShowCheckedModeBanner: false,
+      title: Strings.appName,
+      theme: themeData(
+        currentAppTheme == CurrentAppTheme.dark ? ThemeConfig.darkTheme : ThemeConfig.lightTheme,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      darkTheme: themeData(ThemeConfig.darkTheme),
+      home: const SplashScreen(),
     );
   }
-}
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+  // Apply font to our app's theme
+  ThemeData themeData(ThemeData theme) {
+    return theme.copyWith(
+      textTheme: GoogleFonts.sourceSansProTextTheme(
+        theme.textTheme,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      colorScheme: theme.colorScheme.copyWith(
+        secondary: ThemeConfig.lightAccent,
       ),
     );
   }
